@@ -11,6 +11,7 @@
     "seed": "node --env-file=.env.local scripts/seed.mjs",
     "migrate": "node --env-file=.env.local scripts/migrate.mjs",
     "sync-stripe": "node --env-file=.env.local scripts/sync-stripe-to-vercel.mjs",
+    "check-secrets": "node scripts/check-secrets.mjs",
     "gen:types": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" --schema public > src/lib/database.types.ts"
   },
   "dependencies": {

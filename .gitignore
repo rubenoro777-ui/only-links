@@ -26,14 +26,19 @@ yarn-error.log*
 
 # env files (NEVER commit real secrets)
 .env
+.env.*
 .env*.local
 .env.development
 .env.production
+.env.vercel*
+!.env.example
 
 # stray credential/config dumps (keep secrets out of the repo)
 vercel-env-*.txt
 *.key
 *-key.txt
+secrets/
+*.secret
 
 # vercel
 .vercel
@@ -45,5 +50,3 @@ next-env.d.ts
 # supabase
 /supabase/.branches
 /supabase/.temp
-
-.vercel
