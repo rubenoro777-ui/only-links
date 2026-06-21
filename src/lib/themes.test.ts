@@ -7,6 +7,7 @@ const retro2001PresetIds = [
   "magazine-2001",
   "arcade-2001",
 ] as const;
+const retro2001PresetIdSet = new Set<string>(retro2001PresetIds);
 
 describe("theme presets", () => {
   it("offers curated 2001-inspired presets for users to choose", () => {
@@ -17,7 +18,7 @@ describe("theme presets", () => {
 
   it("describes each 2001-inspired preset in the picker", () => {
     const retro2001Themes = THEMES.filter((theme) =>
-      retro2001PresetIds.includes(theme.id),
+      retro2001PresetIdSet.has(theme.id),
     );
 
     expect(retro2001Themes).toHaveLength(retro2001PresetIds.length);
