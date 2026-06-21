@@ -27,6 +27,7 @@ import {
   cleanReferrer,
   clicksByDay,
 } from "@/lib/analytics-helpers";
+import { isPro } from "@/lib/pro";
 
 export const metadata = { title: "Dashboard" };
 
@@ -50,6 +51,7 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const profile = await getCurrentProfile();
   if (!profile) redirect("/onboarding");
+  const pro = isPro(profile);
 
   const supabase = await createClient();
 
@@ -197,7 +199,7 @@ export default async function DashboardPage() {
           <CardDescription>Pick a theme preset for your public page.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ThemePicker current={profile.theme} />
+          <ThemePicker current={profile.theme} isPro={pro} />
         </CardContent>
       </Card>
 

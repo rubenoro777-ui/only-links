@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { getTheme, isThemeId, THEMES } from "./themes";
+import {
+  canSelectTheme,
+  getTheme,
+  getThemeAccess,
+  isThemeId,
+  renderThemeSceneCss,
+  THEMES,
+} from "./themes";
 
 const retro2001PresetIds = [
   "portal-2001",
@@ -30,9 +37,58 @@ describe("theme presets", () => {
     ).toBe(true);
   });
 
+  it("locks richer 2001-inspired scene presets to Pro", () => {
+    const retro2001Themes = THEMES.filter((theme) =>
+      retro2001PresetIdSet.has(theme.id),
+    );
+
+    expect(retro2001Themes.every((theme) => theme.requiredPlan === "pro")).toBe(true);
+    expect(THEMES.find((theme) => theme.id === "default")?.requiredPlan).toBe("free");
+  });
+
+  it("allows Free users to preview but not select Pro-only themes", () => {
+    expect(canSelectTheme({ themeId: "default", subscriptionStatus: "free" })).toBe(true);
+    expect(canSelectTheme({ themeId: "portal-2001", subscriptionStatus: "free" })).toBe(false);
+    expect(canSelectTheme({ themeId: "portal-2001", subscriptionStatus: "pro" })).toBe(true);
+    expect(getThemeAccess({ themeId: "portal-2001", subscriptionStatus: "free" })).toEqual({
+      allowed: false,
+      reason: "Upgrade to Pro to use this theme.",
+    });
+  });
+
   it("accepts the 2001-inspired presets as stored profile theme ids", () => {
     expect(retro2001PresetIds.every((themeId) => isThemeId(themeId))).toBe(true);
     expect(getTheme("aqua-2001").name).toBe("Aqua 2001");
+  });
+
+  it("gives every 2001-inspired preset depth, scene graphics, and motion", () => {
+    const retro2001Themes = THEMES.filter((theme) =>
+      retro2001PresetIdSet.has(theme.id),
+    );
+
+    expect(
+      retro2001Themes.every((theme) => theme.scene?.before && theme.scene.after),
+    ).toBe(true);
+    expect(
+      retro2001Themes.every((theme) => theme.scene?.keyframes?.includes("@keyframes")),
+    ).toBe(true);
+    expect(
+      retro2001Themes.every((theme) =>
+        [theme.scene?.before.background, theme.scene?.after?.background]
+          .filter((background): background is string => typeof background === "string")
+          .some((background) => background.includes("gradient")),
+      ),
+    ).toBe(true);
+  });
+
+  it("renders scene layers behind public profile content", () => {
+    const sceneCss = renderThemeSceneCss(getTheme("portal-2001"));
+
+    expect(sceneCss).toContain(".ol-page::before");
+    expect(sceneCss).toContain(".ol-page::after");
+    expect(sceneCss).toContain("pointer-events: none");
+    expect(sceneCss).toContain("z-index: 0");
+    expect(sceneCss).toContain("@media (prefers-reduced-motion: reduce)");
   });
 
   it("keeps every preset complete enough for public rendering", () => {
