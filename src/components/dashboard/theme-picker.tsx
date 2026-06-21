@@ -6,6 +6,13 @@ import { THEMES, type Theme } from "@/lib/themes";
 import { updateTheme } from "@/actions/profile";
 import { cn } from "@/lib/utils";
 
+const THEME_COLLECTIONS = Array.from(new Set(THEMES.map((theme) => theme.collection))).map(
+  (collection) => ({
+    collection,
+    themes: THEMES.filter((theme) => theme.collection === collection),
+  }),
+);
+
 export function ThemePicker({ current }: { current: string }) {
   const [selected, setSelected] = useState(current);
   const [isPending, startTransition] = useTransition();
@@ -27,32 +34,47 @@ export function ThemePicker({ current }: { current: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {THEMES.map((theme) => {
-          const active = selected === theme.id;
-          return (
-            <button
-              key={theme.id}
-              type="button"
-              onClick={() => choose(theme.id)}
-              disabled={isPending}
-              aria-pressed={active}
-              className={cn(
-                "overflow-hidden rounded-xl border-2 text-left transition disabled:opacity-70",
-                active
-                  ? "border-primary ring-2 ring-primary/20"
-                  : "border-transparent hover:border-muted-foreground/30",
-              )}
-            >
-              <ThemeSwatch theme={theme} />
-              <div className="flex items-center justify-between px-2 py-1.5">
-                <span className="text-xs font-medium">{theme.name}</span>
-                {active && <Check className="size-3.5 text-primary" />}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      {THEME_COLLECTIONS.map(({ collection, themes }) => (
+        <section key={collection} className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {collection}
+            </h3>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {themes.map((theme) => {
+              const active = selected === theme.id;
+              return (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => choose(theme.id)}
+                  disabled={isPending}
+                  aria-pressed={active}
+                  aria-label={`Apply ${theme.name}: ${theme.description}`}
+                  className={cn(
+                    "overflow-hidden rounded-xl border-2 bg-card text-left transition disabled:opacity-70",
+                    active
+                      ? "border-primary ring-2 ring-primary/20"
+                      : "border-transparent hover:border-muted-foreground/30",
+                  )}
+                >
+                  <ThemeSwatch theme={theme} />
+                  <div className="space-y-1 px-2 py-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium">{theme.name}</span>
+                      {active && <Check className="size-3.5 shrink-0 text-primary" />}
+                    </div>
+                    <p className="line-clamp-2 text-[0.68rem] leading-tight text-muted-foreground">
+                      {theme.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ))}
       {error ? (
         <p className="text-sm text-destructive">{error}</p>
       ) : (
