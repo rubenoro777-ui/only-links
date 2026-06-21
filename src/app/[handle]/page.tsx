@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicProfileByHandle } from "@/lib/queries";
-import { getTheme } from "@/lib/themes";
+import { getTheme, renderThemeSceneCss } from "@/lib/themes";
 import { parseSocials, getPlatform, hrefFor } from "@/lib/socials";
 import { SITE_NAME, getSiteUrl } from "@/lib/site";
 import { parseUA, hashVisitorId, extractIp } from "@/lib/analytics";
@@ -129,8 +129,11 @@ export default async function PublicProfilePage({ params }: Params) {
     .ol-page {
       background: ${customBg ?? theme.background};
       color: ${customText ?? theme.text};
+      position: relative;
+      overflow: hidden;
       ${fontFamily ? `font-family: ${fontFamily};` : ""}
     }
+    ${renderThemeSceneCss(theme)}
     .ol-avatar { box-shadow: 0 0 0 3px ${theme.ring}; }
     .ol-muted { color: ${theme.muted}; }
     .ol-link {

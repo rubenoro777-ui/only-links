@@ -1,8 +1,9 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useState, useTransition } from "react";
 import { Check } from "lucide-react";
-import { THEMES, type Theme } from "@/lib/themes";
+import { THEMES, type Theme, type ThemeSceneLayer } from "@/lib/themes";
 import { updateTheme } from "@/actions/profile";
 import { cn } from "@/lib/utils";
 
@@ -96,15 +97,28 @@ function ThemeSwatch({ theme }: { theme: Theme }) {
 
   return (
     <div
-      className="flex h-24 flex-col items-center justify-center gap-1.5 px-3"
+      className="relative flex h-24 flex-col items-center justify-center gap-1.5 overflow-hidden px-3"
       style={{ background: theme.background }}
     >
+      {theme.scene?.before && <ScenePreviewLayer layer={theme.scene.before} />}
+      {theme.scene?.after && <ScenePreviewLayer layer={theme.scene.after} />}
       <div
-        className="mb-0.5 size-5 rounded-full"
+        className="relative z-10 mb-0.5 size-5 rounded-full"
         style={{ background: theme.buttonBg, boxShadow: `0 0 0 2px ${theme.ring}` }}
       />
-      <div className="h-3 w-full" style={barStyle} />
-      <div className="h-3 w-full" style={barStyle} />
+      <div className="relative z-10 h-3 w-full" style={barStyle} />
+      <div className="relative z-10 h-3 w-full" style={barStyle} />
     </div>
   );
+}
+
+function ScenePreviewLayer({ layer }: { layer: ThemeSceneLayer }) {
+  const style: CSSProperties = {
+    ...layer,
+    position: "absolute",
+    animation: "none",
+    zIndex: 0,
+  };
+
+  return <span aria-hidden="true" style={style} />;
 }
