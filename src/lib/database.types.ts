@@ -82,6 +82,7 @@ export interface Database {
           position: number;
           is_locked: boolean;
           price_cents: number | null;
+          access_ttl_minutes: number;
           archived_at: string | null;
           section_id: string | null;
           created_at: string;
@@ -94,6 +95,7 @@ export interface Database {
           position?: number;
           is_locked?: boolean;
           price_cents?: number | null;
+          access_ttl_minutes?: number;
           archived_at?: string | null;
           section_id?: string | null;
           created_at?: string;
@@ -106,6 +108,7 @@ export interface Database {
           position?: number;
           is_locked?: boolean;
           price_cents?: number | null;
+          access_ttl_minutes?: number;
           archived_at?: string | null;
           section_id?: string | null;
           created_at?: string;

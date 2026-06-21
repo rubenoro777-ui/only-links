@@ -7,16 +7,43 @@ export type AccessGrant = {
   revoked_at: string | null;
 };
 
-export const HANDOFF_TTL_MS = 30 * 60 * 1000;
+export const DEFAULT_ACCESS_TTL_MINUTES = 30;
+export const MIN_ACCESS_TTL_MINUTES = 5;
+export const MAX_ACCESS_TTL_MINUTES = 60 * 24 * 7;
+
+export const ACCESS_TTL_OPTIONS = [
+  { label: "15 minutes", minutes: 15 },
+  { label: "30 minutes", minutes: 30 },
+  { label: "1 hour", minutes: 60 },
+  { label: "6 hours", minutes: 360 },
+  { label: "24 hours", minutes: 1440 },
+  { label: "7 days", minutes: 10080 },
+] as const;
+
 export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
-export function createGrantFields(now = new Date()): Pick<
-  AccessGrant,
-  "access_token" | "expires_at"
-> {
+export function normalizeAccessTtlMinutes(value: unknown): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : Number.parseInt(typeof value === "string" ? value.trim() : "", 10);
+
+  if (!Number.isFinite(parsed)) return DEFAULT_ACCESS_TTL_MINUTES;
+  return Math.min(
+    MAX_ACCESS_TTL_MINUTES,
+    Math.max(MIN_ACCESS_TTL_MINUTES, Math.round(parsed)),
+  );
+}
+
+export function createGrantFields(
+  handoffTtlMinutes: number = DEFAULT_ACCESS_TTL_MINUTES,
+  now = new Date(),
+): Pick<AccessGrant, "access_token" | "expires_at"> {
+  const ttlMinutes = normalizeAccessTtlMinutes(handoffTtlMinutes);
+
   return {
     access_token: generateAccessToken(),
-    expires_at: new Date(now.getTime() + HANDOFF_TTL_MS).toISOString(),
+    expires_at: new Date(now.getTime() + ttlMinutes * 60 * 1000).toISOString(),
   };
 }
 

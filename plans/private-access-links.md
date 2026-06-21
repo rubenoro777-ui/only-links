@@ -105,7 +105,7 @@ Someone else opens /unlock/{linkId}, /l/{linkId}, or an expired ?t= link
 Like 1Password / Bitwarden Send links:
 
 - Each payment gets a **unique token**
-- The `?t=` handoff link **expires after 30 minutes**
+- The `?t=` handoff link **expires after a duration set by the link owner** (default 30 minutes; 15 min to 7 days)
 - The handoff token is **single-use** (`redeemed_at` set on first `/l` hit)
 - After redemption, access continues via an **HttpOnly cookie** on that device for up to 1 year
 - The destination URL is never returned in JSON APIs
@@ -136,7 +136,7 @@ Like 1Password / Bitwarden Send links:
 ### Slice 3 — Creator controls
 
 - Dashboard: view unlock count, revoke access for a link or single grant.
-- Optional expiry per link (`access_ttl_hours` on `links`).
+- Owner-configured handoff expiry per link (`access_ttl_minutes` on `links`, dashboard select when lock is enabled).
 
 ### Slice 4 — Hardening
 

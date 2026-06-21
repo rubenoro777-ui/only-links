@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
-import { buildHandoffPath, getAccessTokenForSession } from "@/lib/access-grants";
+import {
+  buildHandoffPath,
+  createGrantFields,
+  getAccessTokenForSession,
+} from "@/lib/access-grants";
 
 /**
  * GET /api/stripe/verify?session_id=xxx&link_id=xxx
@@ -39,12 +43,21 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
+  const { data: linkRow } = await supabase
+    .from("links")
+    .select("access_ttl_minutes")
+    .eq("id", linkId)
+    .maybeSingle();
+
+  const grantFields = createGrantFields(linkRow?.access_ttl_minutes);
+
   const { error: upsertError } = await supabase.from("link_unlocks").upsert(
     {
       link_id: linkId,
       stripe_session_id: sessionId,
       visitor_id: session.metadata?.visitor_id || null,
       email: session.customer_details?.email ?? null,
+      ...grantFields,
     },
     { onConflict: "stripe_session_id", ignoreDuplicates: true },
   );
