@@ -18,7 +18,8 @@ export type PlanFeature = {
 export const PLAN_FEATURES: PlanFeature[] = [
   { label: "Links",                      free: "Up to 10",   pro: "Unlimited"    },
   { label: "Link sections",              free: true,         pro: true           },
-  { label: "Custom design & themes",     free: true,         pro: true           },
+  { label: "Custom design & basic themes", free: true,       pro: true           },
+  { label: "Premium scene themes",       free: false,        pro: true           },
   { label: "NFC & share bar",            free: true,         pro: true           },
   { label: "Analytics (30-day)",         free: true,         pro: true           },
   { label: "Country, device & browser breakdowns", free: true, pro: true         },

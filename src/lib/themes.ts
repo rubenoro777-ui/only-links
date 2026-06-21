@@ -11,6 +11,7 @@ export type Theme = {
   name: string;
   collection: string;
   description: string;
+  requiredPlan: ThemePlan;
   /** CSS `background` for the page (supports gradients). */
   background: string;
   /** Primary text color. */
@@ -33,6 +34,8 @@ export type Theme = {
   /** Optional decorative scene rendered behind public profile content. */
   scene?: ThemeScene;
 };
+
+export type ThemePlan = "free" | "pro";
 
 export type ThemeSceneLayer = {
   width: string;
@@ -123,6 +126,7 @@ export const THEMES: Theme[] = [
     name: "Clean",
     collection: "Essentials",
     description: "A bright, minimal preset for a neutral public profile.",
+    requiredPlan: "free",
     background: "#fafafa",
     text: "#09090b",
     muted: "#71717a",
@@ -139,6 +143,7 @@ export const THEMES: Theme[] = [
     name: "Noir",
     collection: "Essentials",
     description: "A restrained dark preset with quiet contrast.",
+    requiredPlan: "free",
     background: "#0a0a0a",
     text: "#fafafa",
     muted: "#a1a1aa",
@@ -155,6 +160,7 @@ export const THEMES: Theme[] = [
     name: "Midnight",
     collection: "Essentials",
     description: "Deep indigo glass styling with soft luminous buttons.",
+    requiredPlan: "free",
     background: "linear-gradient(160deg, #0f172a 0%, #312e81 100%)",
     text: "#f8fafc",
     muted: "#c7d2fe",
@@ -172,6 +178,7 @@ export const THEMES: Theme[] = [
     name: "Sunset",
     collection: "Essentials",
     description: "Warm gradients and rounded buttons for a playful page.",
+    requiredPlan: "free",
     background: "linear-gradient(160deg, #ff5f6d 0%, #ffc371 100%)",
     text: "#3b0a14",
     muted: "rgba(59,10,20,0.72)",
@@ -188,6 +195,7 @@ export const THEMES: Theme[] = [
     name: "Ocean",
     collection: "Essentials",
     description: "Cool blues with crisp white link cards.",
+    requiredPlan: "free",
     background: "linear-gradient(160deg, #2193b0 0%, #6dd5ed 100%)",
     text: "#04293a",
     muted: "rgba(4,41,58,0.72)",
@@ -204,6 +212,7 @@ export const THEMES: Theme[] = [
     name: "Forest",
     collection: "Essentials",
     description: "Evergreen tones with subtle translucent buttons.",
+    requiredPlan: "free",
     background: "linear-gradient(160deg, #0b3d2e 0%, #3a7d44 100%)",
     text: "#f0fdf4",
     muted: "#bbf7d0",
@@ -221,6 +230,7 @@ export const THEMES: Theme[] = [
     name: "Bubblegum",
     collection: "Essentials",
     description: "Soft pink gradients and pill-shaped links.",
+    requiredPlan: "free",
     background: "linear-gradient(160deg, #ff9a9e 0%, #fecfef 100%)",
     text: "#6b2150",
     muted: "rgba(107,33,80,0.72)",
@@ -237,6 +247,7 @@ export const THEMES: Theme[] = [
     name: "Gold",
     collection: "Essentials",
     description: "A dark luxury preset with metallic line work.",
+    requiredPlan: "free",
     background: "radial-gradient(circle at 50% 0%, #1c1917 0%, #0c0a09 70%)",
     text: "#fafaf9",
     muted: "#d6c08a",
@@ -254,6 +265,7 @@ export const THEMES: Theme[] = [
     name: "Portal 2001",
     collection: "Web 2001",
     description: "A 2001 portal-style scene with floating panels, glossy depth, and sunny motion.",
+    requiredPlan: "pro",
     background:
       "linear-gradient(180deg, #d9ecff 0%, #ffffff 36%, #f6d365 100%)",
     text: "#082f66",
@@ -308,6 +320,7 @@ export const THEMES: Theme[] = [
     name: "Aqua 2001",
     collection: "Web 2001",
     description: "A 2001 glass scene with translucent bubbles, shine, and gentle drift.",
+    requiredPlan: "pro",
     background:
       "radial-gradient(circle at 50% 0%, #ffffff 0%, #dbeafe 42%, #8ec5ff 100%)",
     text: "#102033",
@@ -364,6 +377,7 @@ export const THEMES: Theme[] = [
     name: "Magazine 2001",
     collection: "Web 2001",
     description: "A 2001 editorial scene with layered paper, print texture, and slow page drift.",
+    requiredPlan: "pro",
     background:
       "linear-gradient(90deg, rgba(31,41,55,0.06) 1px, transparent 1px), linear-gradient(180deg, #fff8e7 0%, #f1dfb8 100%)",
     text: "#241b15",
@@ -418,6 +432,7 @@ export const THEMES: Theme[] = [
     name: "Arcade 2001",
     collection: "Web 2001",
     description: "A 2001 Flash-era scene with neon orbs, arcade glow, and animated graphics.",
+    requiredPlan: "pro",
     background:
       "radial-gradient(circle at 20% 20%, rgba(34,211,238,0.28) 0%, transparent 28%), radial-gradient(circle at 80% 0%, rgba(251,191,36,0.32) 0%, transparent 26%), linear-gradient(145deg, #1e0052 0%, #050018 100%)",
     text: "#f8fafc",
@@ -479,4 +494,26 @@ export function getTheme(id: string | null | undefined): Theme {
 
 export function isThemeId(id: string): boolean {
   return THEME_IDS.includes(id);
+}
+
+export function canSelectTheme({
+  themeId,
+  subscriptionStatus,
+}: {
+  themeId: string | null | undefined;
+  subscriptionStatus: string | null | undefined;
+}): boolean {
+  const theme = getTheme(themeId);
+  return theme.requiredPlan === "free" || subscriptionStatus === "pro";
+}
+
+export function getThemeAccess({
+  themeId,
+  subscriptionStatus,
+}: {
+  themeId: string | null | undefined;
+  subscriptionStatus: string | null | undefined;
+}): { allowed: true } | { allowed: false; reason: string } {
+  if (canSelectTheme({ themeId, subscriptionStatus })) return { allowed: true };
+  return { allowed: false, reason: "Upgrade to Pro to use this theme." };
 }

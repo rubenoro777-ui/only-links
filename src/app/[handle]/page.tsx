@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicProfileByHandle } from "@/lib/queries";
-import { getTheme, renderThemeSceneCss } from "@/lib/themes";
+import { canSelectTheme, DEFAULT_THEME_ID, getTheme, renderThemeSceneCss } from "@/lib/themes";
 import { parseSocials, getPlatform, hrefFor } from "@/lib/socials";
 import { SITE_NAME, getSiteUrl } from "@/lib/site";
 import { parseUA, hashVisitorId, extractIp } from "@/lib/analytics";
@@ -81,7 +81,14 @@ export default async function PublicProfilePage({ params }: Params) {
   if (!data) notFound();
 
   const { profile, links, sections } = data;
-  const theme = getTheme(profile.theme);
+  const theme = getTheme(
+    canSelectTheme({
+      themeId: profile.theme,
+      subscriptionStatus: profile.subscription_status,
+    })
+      ? profile.theme
+      : DEFAULT_THEME_ID,
+  );
   const pageUrl = `${getSiteUrl()}/${profile.handle}`;
 
   // Paywall-bypass prevention: a locked link hides its destination behind the
