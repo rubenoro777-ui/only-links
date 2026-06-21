@@ -3,12 +3,14 @@ import { getStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createGrantFields } from "@/lib/access-grants";
+import { syncConnectAccount } from "@/lib/stripe-connect-sync";
 
 /**
  * Stripe webhook endpoint.
  *
  * Events handled:
  *   checkout.session.completed   - link unlock payment OR Pro subscription start
+ *   account.updated              - Stripe Connect onboarding status
  *   customer.subscription.updated - subscription status change (upgrade / downgrade)
  *   customer.subscription.deleted - subscription cancelled / expired
  *
@@ -59,6 +61,14 @@ export async function POST(request: NextRequest) {
             .eq("id", linkId)
             .maybeSingle();
           const grantFields = createGrantFields(linkRow?.access_ttl_minutes);
+          const platformFeeCents = Number.parseInt(
+            session.metadata?.platform_fee_cents ?? "",
+            10,
+          );
+          const creatorNetCents = Number.parseInt(
+            session.metadata?.creator_net_cents ?? "",
+            10,
+          );
 
           const { error } = await supabase.from("link_unlocks").upsert(
             {
@@ -66,6 +76,12 @@ export async function POST(request: NextRequest) {
               stripe_session_id: session.id,
               visitor_id: visitorId || null,
               email: session.customer_details?.email ?? null,
+              ...(Number.isFinite(platformFeeCents)
+                ? { platform_fee_cents: platformFeeCents }
+                : {}),
+              ...(Number.isFinite(creatorNetCents)
+                ? { creator_net_cents: creatorNetCents }
+                : {}),
               ...grantFields,
             },
             { onConflict: "stripe_session_id", ignoreDuplicates: true },
@@ -94,6 +110,12 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+      break;
+    }
+
+    case "account.updated": {
+      const account = event.data.object;
+      await syncConnectAccount(supabase, account);
       break;
     }
 

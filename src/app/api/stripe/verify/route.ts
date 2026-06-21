@@ -50,6 +50,14 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   const grantFields = createGrantFields(linkRow?.access_ttl_minutes);
+  const platformFeeCents = Number.parseInt(
+    session.metadata?.platform_fee_cents ?? "",
+    10,
+  );
+  const creatorNetCents = Number.parseInt(
+    session.metadata?.creator_net_cents ?? "",
+    10,
+  );
 
   const { error: upsertError } = await supabase.from("link_unlocks").upsert(
     {
@@ -57,6 +65,12 @@ export async function GET(request: NextRequest) {
       stripe_session_id: sessionId,
       visitor_id: session.metadata?.visitor_id || null,
       email: session.customer_details?.email ?? null,
+      ...(Number.isFinite(platformFeeCents)
+        ? { platform_fee_cents: platformFeeCents }
+        : {}),
+      ...(Number.isFinite(creatorNetCents)
+        ? { creator_net_cents: creatorNetCents }
+        : {}),
       ...grantFields,
     },
     { onConflict: "stripe_session_id", ignoreDuplicates: true },

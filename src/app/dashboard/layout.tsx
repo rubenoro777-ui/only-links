@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ExternalLink, CreditCard } from "lucide-react";
+import { ExternalLink, CreditCard, Wallet } from "lucide-react";
 import { getCurrentProfile, getCurrentUser } from "@/lib/queries";
 import { isPro } from "@/lib/pro";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,11 @@ export default async function DashboardLayout({
               <Link href={`/${profile.handle}`} target="_blank" className="flex min-w-0 items-center gap-1.5">
                 <span className="truncate text-sm">/{profile.handle}</span>
                 <ExternalLink className="size-3.5 shrink-0" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="icon" className="size-8 shrink-0" title="Payouts">
+              <Link href="/dashboard/payouts">
+                <Wallet className="size-4" />
               </Link>
             </Button>
             <Button asChild variant="ghost" size="icon" className="size-8 shrink-0" title="Billing">

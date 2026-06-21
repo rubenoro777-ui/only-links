@@ -28,6 +28,7 @@ import {
   clicksByDay,
 } from "@/lib/analytics-helpers";
 import { isPro } from "@/lib/pro";
+import { isConnectReady } from "@/lib/stripe-connect";
 
 export const metadata = { title: "Dashboard" };
 
@@ -52,6 +53,7 @@ export default async function DashboardPage() {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/onboarding");
   const pro = isPro(profile);
+  const payoutsReady = isConnectReady(profile);
 
   const supabase = await createClient();
 
@@ -247,7 +249,12 @@ export default async function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <LinksManager links={links} clickCounts={clickCounts} sections={sections} />
+          <LinksManager
+            links={links}
+            clickCounts={clickCounts}
+            sections={sections}
+            payoutsReady={payoutsReady}
+          />
         </CardContent>
       </Card>
     </div>
