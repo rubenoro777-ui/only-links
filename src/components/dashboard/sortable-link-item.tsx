@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Trash2, BarChart3, Archive, Lock, Unlock } from "lucide-react";
@@ -21,10 +21,12 @@ export function SortableLinkItem({
   link,
   clicks,
   sections = [],
+  payoutsReady = false,
 }: {
   link: LinkRow;
   clicks: number;
   sections?: LinkSection[];
+  payoutsReady?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: link.id });
@@ -192,6 +194,14 @@ export function SortableLinkItem({
               🔒 Lock this link (charge to unlock)
             </Label>
           </div>
+          {!payoutsReady && (
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              Connect Stripe payouts before you can sell this link.{" "}
+              <Link href="/dashboard/payouts" className="font-medium underline-offset-4 hover:underline">
+                Set up payouts
+              </Link>
+            </p>
+          )}
           <Input
             name="price_cents_dollars"
             type="number"

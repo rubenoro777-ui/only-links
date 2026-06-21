@@ -87,13 +87,21 @@ into `.env.local`:
 - `STRIPE_WEBHOOK_SECRET` — `whsec_...` (see webhook step below)
 - `STRIPE_PRO_MONTHLY_PRICE_ID` — create a Product + recurring Price in Stripe
 - `STRIPE_PRO_YEARLY_PRICE_ID` — create a yearly Price on the same Product
+- `STRIPE_PLATFORM_FEE_BPS_FREE` — platform fee for free creators (default `2000` = 20%)
+- `STRIPE_PLATFORM_FEE_BPS_PRO` — platform fee for Pro creators (default `800` = 8%)
 
-**Webhook (required for Pro + unlock persistence):**
+**Stripe Connect (creator payouts for locked links):**
+
+1. In [Stripe Dashboard → Connect](https://dashboard.stripe.com/connect/accounts/overview), complete platform setup.
+2. Creators connect payouts at **Dashboard → Payouts** in OnlyLinks.
+3. Locked-link checkout uses destination charges: fan pays → creator receives net amount → OnlyLinks keeps the platform fee.
+
+**Webhook (required for Pro + unlock persistence + Connect status):**
 
 1. In Stripe Dashboard → Developers → Webhooks, add endpoint:
    `https://your-domain.com/api/stripe/webhook`
-2. Listen for: `checkout.session.completed`, `customer.subscription.updated`,
-   `customer.subscription.deleted`
+2. Listen for: `checkout.session.completed`, `account.updated`,
+   `customer.subscription.updated`, `customer.subscription.deleted`
 3. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`
 
 **Local webhook testing:**

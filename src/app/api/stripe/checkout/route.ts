@@ -4,12 +4,30 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/queries";
 import { getSiteUrl } from "@/lib/site";
 import { hashVisitorId, extractIp } from "@/lib/analytics";
+import {
+  calculatePlatformFeeCents,
+  isConnectReady,
+  subscriptionTierFromStatus,
+} from "@/lib/stripe-connect";
 import { headers } from "next/headers";
 
 type CheckoutBody = {
   type: string;
   linkId?: string;
   interval?: string;
+};
+
+type LinkOwnerProfile = {
+  stripe_connect_account_id: string | null;
+  stripe_connect_charges_enabled: boolean;
+  subscription_status: string;
+};
+
+type LinkCheckoutRow = {
+  id: string;
+  title: string;
+  price_cents: number;
+  profiles: LinkOwnerProfile | LinkOwnerProfile[] | null;
 };
 
 function stripeErrorMessage(err: unknown): string {
@@ -47,16 +65,34 @@ export async function POST(request: NextRequest) {
     if (!linkId) return NextResponse.json({ error: "Missing linkId" }, { status: 400 });
 
     const supabase = await createClient();
-    const { data: linkRow } = await supabase
+    const { data: linkRowRaw } = await supabase
       .from("links")
-      .select("id, title, price_cents, profile_id")
+      .select(
+        "id, title, price_cents, profiles(stripe_connect_account_id, stripe_connect_charges_enabled, subscription_status)",
+      )
       .eq("id", linkId)
       .eq("is_locked", true)
       .maybeSingle();
 
-    if (!linkRow || !linkRow.price_cents) {
+    const linkRow = linkRowRaw as LinkCheckoutRow | null;
+    const ownerProfile = Array.isArray(linkRow?.profiles)
+      ? linkRow.profiles[0] ?? null
+      : linkRow?.profiles ?? null;
+
+    if (!linkRow || !linkRow.price_cents || !ownerProfile) {
       return NextResponse.json({ error: "Link not found or not locked" }, { status: 404 });
     }
+
+    if (!isConnectReady(ownerProfile) || !ownerProfile.stripe_connect_account_id) {
+      return NextResponse.json(
+        { error: "This creator has not finished payout setup yet." },
+        { status: 503 },
+      );
+    }
+
+    const tier = subscriptionTierFromStatus(ownerProfile.subscription_status);
+    const platformFeeCents = calculatePlatformFeeCents(linkRow.price_cents, tier);
+    const creatorNetCents = linkRow.price_cents - platformFeeCents;
 
     const reqHeaders = await headers();
     const ua = reqHeaders.get("user-agent");
@@ -76,9 +112,17 @@ export async function POST(request: NextRequest) {
             quantity: 1,
           },
         ],
+        payment_intent_data: {
+          application_fee_amount: platformFeeCents,
+          transfer_data: {
+            destination: ownerProfile.stripe_connect_account_id,
+          },
+        },
         metadata: {
           link_id: linkId,
           visitor_id: visitorId ?? "",
+          platform_fee_cents: String(platformFeeCents),
+          creator_net_cents: String(creatorNetCents),
         },
         success_url: `${siteUrl}/unlock/${linkId}?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${siteUrl}/unlock/${linkId}?cancelled=1`,

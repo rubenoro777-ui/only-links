@@ -27,6 +27,6 @@ export const PLAN_FEATURES: PlanFeature[] = [
   { label: "CSV analytics export",       free: false,        pro: true           },
   { label: "Remove OnlyLinks branding",  free: false,        pro: true           },
   { label: "Custom domain",             free: false,        pro: true           },
-  { label: "Monetised (locked) links",   free: false,        pro: true           },
+  { label: "Monetised (locked) links",   free: "20% platform fee", pro: "8% platform fee" },
   { label: "Priority support",           free: false,        pro: true           },
 ];
