@@ -1,10 +1,7 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/database.types";
-
-type Client = SupabaseClient<Database>;
+import type { PublicSupabaseClient } from "@/lib/supabase/types";
 
 export async function hasLinkUnlock(
-  supabase: Client,
+  supabase: PublicSupabaseClient,
   linkId: string,
   visitorId: string | null,
 ): Promise<boolean> {

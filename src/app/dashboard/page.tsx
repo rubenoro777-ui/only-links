@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import NextLink from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile, getCurrentUser } from "@/lib/queries";
 import { ProfileForm } from "@/components/dashboard/profile-form";
@@ -136,12 +137,13 @@ export default async function DashboardPage() {
               <CardTitle>Analytics</CardTitle>
               <CardDescription>Last 30 days of click data</CardDescription>
             </div>
-            <a
+            <NextLink
               href="/api/analytics/export"
+              prefetch={false}
               className="shrink-0 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline transition-colors"
             >
               Export CSV
-            </a>
+            </NextLink>
           </CardHeader>
           <CardContent className="space-y-6">
             <AnalyticsSparkline data={dailyClicks} />

@@ -2,16 +2,16 @@
 //
 // Applies any not-yet-applied SQL files in supabase/migrations to the database,
 // tracking what's been run in a `schema_migrations` table. Idempotent: running
-// it repeatedly only applies new files. Wired into redeploy.bat so a database
-// change ships with the same one double-click as a code change — no more
-// pasting SQL into the Supabase dashboard.
+// it repeatedly only applies new files. Run via `pnpm migrate` so database
+// changes can ship alongside code changes without pasting SQL into the
+// Supabase dashboard.
 //
 // Uses the Supabase Management API (no `pg` package, no database password, no
 // pooler hostname). It needs:
 //   - SUPABASE_ACCESS_TOKEN  : a Supabase personal access token (sbp_...),
 //                              created at https://supabase.com/dashboard/account/tokens
 //   - the project ref, derived automatically from NEXT_PUBLIC_SUPABASE_URL
-// Both come from .env.local, which the bat loads via `node --env-file`.
+// Both come from .env.local, loaded by the `migrate` package script.
 
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
