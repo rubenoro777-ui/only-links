@@ -1,12 +1,16 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Trash2, BarChart3, Archive, Lock, Unlock } from "lucide-react";
 import { deleteLink, updateLink, archiveLink, setLinkLocked } from "@/actions/links";
 import { initialActionState } from "@/actions/types";
+import {
+  ACCESS_TTL_OPTIONS,
+  DEFAULT_ACCESS_TTL_MINUTES,
+} from "@/lib/access-grants";
 import type { Link as LinkRow, LinkSection } from "@/lib/database.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,10 +21,12 @@ export function SortableLinkItem({
   link,
   clicks,
   sections = [],
+  payoutsReady = false,
 }: {
   link: LinkRow;
   clicks: number;
   sections?: LinkSection[];
+  payoutsReady?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: link.id });
@@ -188,6 +194,14 @@ export function SortableLinkItem({
               🔒 Lock this link (charge to unlock)
             </Label>
           </div>
+          {!payoutsReady && (
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              Connect Stripe payouts before you can sell this link.{" "}
+              <Link href="/dashboard/payouts" className="font-medium underline-offset-4 hover:underline">
+                Set up payouts
+              </Link>
+            </p>
+          )}
           <Input
             name="price_cents_dollars"
             type="number"
@@ -197,6 +211,28 @@ export function SortableLinkItem({
             placeholder="Price in USD (e.g. 4.99)"
             inputMode="decimal"
           />
+          <div className="space-y-1.5">
+            <Label
+              htmlFor={`access-ttl-${link.id}`}
+              className="text-xs text-muted-foreground"
+            >
+              Private access link expires after payment
+            </Label>
+            <select
+              id={`access-ttl-${link.id}`}
+              name="access_ttl_minutes"
+              defaultValue={String(
+                link.access_ttl_minutes ?? DEFAULT_ACCESS_TTL_MINUTES,
+              )}
+              className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {ACCESS_TTL_OPTIONS.map((option) => (
+                <option key={option.minutes} value={option.minutes}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           {sections.length > 0 && (
             <div className="space-y-1.5">
               <Label htmlFor={`section-${link.id}`} className="text-xs text-muted-foreground">

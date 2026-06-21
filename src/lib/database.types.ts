@@ -23,6 +23,10 @@ export interface Database {
           theme: string;
           socials: Json;
           stripe_customer_id: string | null;
+          stripe_connect_account_id: string | null;
+          stripe_connect_charges_enabled: boolean;
+          stripe_connect_payouts_enabled: boolean;
+          stripe_connect_details_submitted: boolean;
           subscription_status: string;
           subscription_id: string | null;
           custom_bg: string | null;
@@ -42,6 +46,10 @@ export interface Database {
           theme?: string;
           socials?: Json;
           stripe_customer_id?: string | null;
+          stripe_connect_account_id?: string | null;
+          stripe_connect_charges_enabled?: boolean;
+          stripe_connect_payouts_enabled?: boolean;
+          stripe_connect_details_submitted?: boolean;
           subscription_status?: string;
           subscription_id?: string | null;
           custom_bg?: string | null;
@@ -61,6 +69,10 @@ export interface Database {
           theme?: string;
           socials?: Json;
           stripe_customer_id?: string | null;
+          stripe_connect_account_id?: string | null;
+          stripe_connect_charges_enabled?: boolean;
+          stripe_connect_payouts_enabled?: boolean;
+          stripe_connect_details_submitted?: boolean;
           subscription_status?: string;
           subscription_id?: string | null;
           custom_bg?: string | null;
@@ -82,6 +94,7 @@ export interface Database {
           position: number;
           is_locked: boolean;
           price_cents: number | null;
+          access_ttl_minutes: number;
           archived_at: string | null;
           section_id: string | null;
           created_at: string;
@@ -94,6 +107,7 @@ export interface Database {
           position?: number;
           is_locked?: boolean;
           price_cents?: number | null;
+          access_ttl_minutes?: number;
           archived_at?: string | null;
           section_id?: string | null;
           created_at?: string;
@@ -106,6 +120,7 @@ export interface Database {
           position?: number;
           is_locked?: boolean;
           price_cents?: number | null;
+          access_ttl_minutes?: number;
           archived_at?: string | null;
           section_id?: string | null;
           created_at?: string;
@@ -249,6 +264,12 @@ export interface Database {
           stripe_session_id: string;
           visitor_id: string | null;
           email: string | null;
+          access_token: string;
+          expires_at: string;
+          redeemed_at: string | null;
+          revoked_at: string | null;
+          platform_fee_cents: number | null;
+          creator_net_cents: number | null;
           created_at: string;
         };
         Insert: {
@@ -257,6 +278,12 @@ export interface Database {
           stripe_session_id: string;
           visitor_id?: string | null;
           email?: string | null;
+          access_token?: string;
+          expires_at?: string;
+          redeemed_at?: string | null;
+          revoked_at?: string | null;
+          platform_fee_cents?: number | null;
+          creator_net_cents?: number | null;
           created_at?: string;
         };
         Update: {
@@ -265,6 +292,12 @@ export interface Database {
           stripe_session_id?: string;
           visitor_id?: string | null;
           email?: string | null;
+          access_token?: string;
+          expires_at?: string;
+          redeemed_at?: string | null;
+          revoked_at?: string | null;
+          platform_fee_cents?: number | null;
+          creator_net_cents?: number | null;
           created_at?: string;
         };
         Relationships: [
@@ -282,6 +315,18 @@ export interface Database {
       has_link_unlock: {
         Args: { p_link_id: string; p_visitor_id: string };
         Returns: boolean;
+      };
+      redeem_link_access_token: {
+        Args: { p_link_id: string; p_access_token: string };
+        Returns: boolean;
+      };
+      validate_link_access_cookie: {
+        Args: { p_link_id: string; p_access_token: string };
+        Returns: boolean;
+      };
+      get_link_access_token_for_visitor: {
+        Args: { p_link_id: string; p_visitor_id: string };
+        Returns: string;
       };
     };
     Enums: Record<never, never>;

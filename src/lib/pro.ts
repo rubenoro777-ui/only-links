@@ -18,14 +18,15 @@ export type PlanFeature = {
 export const PLAN_FEATURES: PlanFeature[] = [
   { label: "Links",                      free: "Up to 10",   pro: "Unlimited"    },
   { label: "Link sections",              free: true,         pro: true           },
-  { label: "Custom design & themes",     free: true,         pro: true           },
+  { label: "Custom design & basic themes", free: true,       pro: true           },
+  { label: "Premium scene themes",       free: false,        pro: true           },
   { label: "NFC & share bar",            free: true,         pro: true           },
   { label: "Analytics (30-day)",         free: true,         pro: true           },
-  { label: "Country, device & browser breakdowns", free: true, pro: true         },
+  { label: "Geo & device breakdowns",    free: true,         pro: true           },
   { label: "Per-link analytics",         free: true,         pro: true           },
   { label: "CSV analytics export",       free: false,        pro: true           },
   { label: "Remove OnlyLinks branding",  free: false,        pro: true           },
   { label: "Custom domain",             free: false,        pro: true           },
-  { label: "Monetised (locked) links",   free: false,        pro: true           },
+  { label: "Monetised (locked) links",   free: "20% platform fee", pro: "8% platform fee" },
   { label: "Priority support",           free: false,        pro: true           },
 ];

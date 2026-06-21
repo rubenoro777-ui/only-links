@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/queries";
+import { getPlanAccess } from "@/lib/admin-access";
 
 function csvEscape(value: string | null | undefined): string {
   const str = String(value ?? "");
@@ -15,6 +16,24 @@ export async function GET() {
   }
 
   const supabase = await createClient();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+  }
+
+  const access = await getPlanAccess(profile, user.email);
+  if (!access.hasProAccess) {
+    return NextResponse.json(
+      { error: "CSV export is available on the Pro plan." },
+      { status: 403 },
+    );
+  }
 
   // Get all user's links (active + archived)
   const { data: linksRaw } = await supabase

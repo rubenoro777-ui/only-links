@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import NextLink from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile, getCurrentUser } from "@/lib/queries";
 import { ProfileForm } from "@/components/dashboard/profile-form";
@@ -26,6 +27,8 @@ import {
   cleanReferrer,
   clicksByDay,
 } from "@/lib/analytics-helpers";
+import { isConnectReady } from "@/lib/stripe-connect";
+import { getPlanAccess } from "@/lib/admin-access";
 
 export const metadata = { title: "Dashboard" };
 
@@ -49,6 +52,9 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const profile = await getCurrentProfile();
   if (!profile) redirect("/onboarding");
+  const access = await getPlanAccess(profile, user.email);
+  const pro = access.hasProAccess;
+  const payoutsReady = isConnectReady(profile);
 
   const supabase = await createClient();
 
@@ -136,12 +142,22 @@ export default async function DashboardPage() {
               <CardTitle>Analytics</CardTitle>
               <CardDescription>Last 30 days of click data</CardDescription>
             </div>
-            <a
-              href="/api/analytics/export"
-              className="shrink-0 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline transition-colors"
-            >
-              Export CSV
-            </a>
+            {pro ? (
+              <NextLink
+                href="/api/analytics/export"
+                prefetch={false}
+                className="shrink-0 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline transition-colors"
+              >
+                Export CSV
+              </NextLink>
+            ) : (
+              <NextLink
+                href="/dashboard/billing"
+                className="shrink-0 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline transition-colors"
+              >
+                Export CSV (Pro)
+              </NextLink>
+            )}
           </CardHeader>
           <CardContent className="space-y-6">
             <AnalyticsSparkline data={dailyClicks} />
@@ -195,7 +211,7 @@ export default async function DashboardPage() {
           <CardDescription>Pick a theme preset for your public page.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ThemePicker current={profile.theme} />
+          <ThemePicker current={profile.theme} isPro={pro} />
         </CardContent>
       </Card>
 
@@ -243,7 +259,12 @@ export default async function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <LinksManager links={links} clickCounts={clickCounts} sections={sections} />
+          <LinksManager
+            links={links}
+            clickCounts={clickCounts}
+            sections={sections}
+            payoutsReady={payoutsReady}
+          />
         </CardContent>
       </Card>
     </div>

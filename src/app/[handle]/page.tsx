@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { getPublicProfileByHandle } from "@/lib/queries";
-import { getTheme } from "@/lib/themes";
+import { getPublicProfileByHandle, getCurrentUser } from "@/lib/queries";
+import { canSelectTheme, DEFAULT_THEME_ID, getTheme, renderThemeSceneCss } from "@/lib/themes";
 import { parseSocials, getPlatform, hrefFor } from "@/lib/socials";
 import { SITE_NAME, getSiteUrl } from "@/lib/site";
 import { parseUA, hashVisitorId, extractIp } from "@/lib/analytics";
-import { isPro } from "@/lib/pro";
+import {
+  effectiveSubscriptionStatus,
+  readPreviewPlan,
+  PREVIEW_PLAN_COOKIE,
+} from "@/lib/admin";
 import { sanitizeCssValue, neutralizeStyleBreakout, canonicalizeUrl } from "@/lib/utils";
 import { ShareBar } from "@/components/sharebar";
 import type { Link as LinkRow } from "@/lib/database.types";
@@ -81,7 +85,32 @@ export default async function PublicProfilePage({ params }: Params) {
   if (!data) notFound();
 
   const { profile, links, sections } = data;
-  const theme = getTheme(profile.theme);
+
+  const viewer = await getCurrentUser();
+  const viewerIsProfileOwner = viewer?.id === profile.id;
+  const cookieStore = await cookies();
+  const previewPlan = viewerIsProfileOwner
+    ? readPreviewPlan(cookieStore.get(PREVIEW_PLAN_COOKIE)?.value)
+    : "owner";
+  const publicPlanStatus = viewerIsProfileOwner
+    ? effectiveSubscriptionStatus({
+        profile,
+        email: viewer?.email,
+        previewPlan,
+      })
+    : profile.subscription_status === "pro"
+      ? "pro"
+      : "free";
+
+  const theme = getTheme(
+    canSelectTheme({
+      themeId: profile.theme,
+      subscriptionStatus: publicPlanStatus,
+    })
+      ? profile.theme
+      : DEFAULT_THEME_ID,
+  );
+  const showBranding = publicPlanStatus !== "pro";
   const pageUrl = `${getSiteUrl()}/${profile.handle}`;
 
   // Paywall-bypass prevention: a locked link hides its destination behind the
@@ -129,8 +158,11 @@ export default async function PublicProfilePage({ params }: Params) {
     .ol-page {
       background: ${customBg ?? theme.background};
       color: ${customText ?? theme.text};
+      position: relative;
+      overflow: hidden;
       ${fontFamily ? `font-family: ${fontFamily};` : ""}
     }
+    ${renderThemeSceneCss(theme)}
     .ol-avatar { box-shadow: 0 0 0 3px ${theme.ring}; }
     .ol-muted { color: ${theme.muted}; }
     .ol-link {
@@ -266,7 +298,7 @@ export default async function PublicProfilePage({ params }: Params) {
 
       <footer className="flex flex-col items-center gap-3 pt-10">
         <ShareBar url={pageUrl} title={`${displayName} on ${SITE_NAME}`} />
-        {!isPro(profile) && (
+        {showBranding && (
           <Link href="/" className="ol-muted text-xs underline-offset-4 hover:underline">
             Made with {SITE_NAME}
           </Link>

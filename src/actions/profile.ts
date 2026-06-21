@@ -2,9 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import {
+  effectiveSubscriptionStatus,
+  readPreviewPlan,
+  PREVIEW_PLAN_COOKIE,
+} from "@/lib/admin";
 import { claimHandleSchema, profileSchema, socialsSchema } from "@/lib/validations";
-import { isThemeId } from "@/lib/themes";
+import { getThemeAccess, isThemeId } from "@/lib/themes";
 import { normalizeSocial, MAX_SOCIALS, type SocialLink } from "@/lib/socials";
 import { sanitizeCssValue } from "@/lib/utils";
 import type { ActionState } from "@/actions/types";
@@ -190,17 +196,31 @@ export async function updateTheme(themeId: string): Promise<ActionState> {
 
   if (!isThemeId(themeId)) return { error: "Unknown theme." };
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("handle, subscription_status")
+    .eq("id", user.id)
+    .maybeSingle();
+  const access = getThemeAccess({
+    themeId,
+    subscriptionStatus: effectiveSubscriptionStatus({
+      profile: {
+        handle: profile?.handle ?? "",
+        subscription_status: profile?.subscription_status ?? "free",
+      },
+      email: user.email,
+      previewPlan: readPreviewPlan(
+        (await cookies()).get(PREVIEW_PLAN_COOKIE)?.value,
+      ),
+    }),
+  });
+  if (!access.allowed) return { error: access.reason };
+
   const { error } = await supabase
     .from("profiles")
     .update({ theme: themeId })
     .eq("id", user.id);
   if (error) return { error: "Could not save the theme. Please try again." };
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("handle")
-    .eq("id", user.id)
-    .maybeSingle();
 
   await revalidateDashboardPaths(profile?.handle);
   return { success: true };

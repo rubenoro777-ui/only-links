@@ -28,10 +28,12 @@ export function LinksManager({
   links,
   clickCounts,
   sections = [],
+  payoutsReady = false,
 }: {
   links: LinkRow[];
   clickCounts: Record<string, number>;
   sections?: LinkSection[];
+  payoutsReady?: boolean;
 }) {
   const activeLinks = links.filter((l) => l.archived_at === null);
   const archivedLinks = links.filter((l) => l.archived_at !== null);
@@ -100,6 +102,7 @@ export function LinksManager({
                       link={link}
                       clicks={clickCounts[link.id] ?? 0}
                       sections={sections}
+                      payoutsReady={payoutsReady}
                     />
                   ))}
                 </ul>
@@ -120,6 +123,7 @@ export function LinksManager({
                           link={link}
                           clicks={clickCounts[link.id] ?? 0}
                           sections={sections}
+                          payoutsReady={payoutsReady}
                         />
                       ))}
                     </ul>

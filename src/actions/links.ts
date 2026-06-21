@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { normalizeAccessTtlMinutes } from "@/lib/access-grants";
+import { isConnectReady } from "@/lib/stripe-connect";
 import { linkSchema, reorderSchema } from "@/lib/validations";
 import { normalizeUrl } from "@/lib/utils";
 import type { ActionState } from "@/actions/types";
@@ -75,6 +77,24 @@ export async function updateLink(
   const rawSectionId = formData.get("section_id");
   const sectionId =
     typeof rawSectionId === "string" && rawSectionId ? rawSectionId : null;
+  const accessTtlMinutes = isLocked
+    ? normalizeAccessTtlMinutes(formData.get("access_ttl_minutes"))
+    : undefined;
+
+  if (isLocked) {
+    const { data: ownerProfile } = await supabase
+      .from("profiles")
+      .select("stripe_connect_account_id, stripe_connect_charges_enabled")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!isConnectReady(ownerProfile ?? { stripe_connect_account_id: null, stripe_connect_charges_enabled: false })) {
+      return {
+        error:
+          "Connect Stripe payouts before selling locked links. Open Dashboard → Payouts to finish setup.",
+      };
+    }
+  }
 
   const { error } = await supabase
     .from("links")
@@ -83,6 +103,9 @@ export async function updateLink(
       url,
       is_locked: isLocked,
       price_cents: priceCents,
+      ...(accessTtlMinutes !== undefined
+        ? { access_ttl_minutes: accessTtlMinutes }
+        : {}),
       section_id: sectionId,
     })
     .eq("id", id)
