@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createGrantFields } from "@/lib/access-grants";
 
 /**
  * Stripe webhook endpoint.
@@ -52,12 +53,20 @@ export async function POST(request: NextRequest) {
         const linkId = session.metadata?.link_id;
         const visitorId = session.metadata?.visitor_id ?? null;
         if (linkId) {
+          const { data: linkRow } = await supabase
+            .from("links")
+            .select("access_ttl_minutes")
+            .eq("id", linkId)
+            .maybeSingle();
+          const grantFields = createGrantFields(linkRow?.access_ttl_minutes);
+
           const { error } = await supabase.from("link_unlocks").upsert(
             {
               link_id: linkId,
               stripe_session_id: session.id,
               visitor_id: visitorId || null,
               email: session.customer_details?.email ?? null,
+              ...grantFields,
             },
             { onConflict: "stripe_session_id", ignoreDuplicates: true },
           );

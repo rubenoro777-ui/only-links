@@ -1,14 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeUrl } from "@/lib/utils";
+import {
+  buildHandoffPath,
+  createGrantFields,
+  getAccessTokenForSession,
+} from "@/lib/access-grants";
 
 /**
  * GET /api/stripe/verify?session_id=xxx&link_id=xxx
  *
  * Called by the unlock page after Stripe redirects back with a session_id.
  * Verifies the payment, records the unlock if not already done, and returns
- * the destination URL so the client can redirect the visitor.
+ * a short-lived private handoff path instead of the destination URL.
  */
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("session_id");
@@ -39,14 +43,23 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
+  const { data: linkRow } = await supabase
+    .from("links")
+    .select("access_ttl_minutes")
+    .eq("id", linkId)
+    .maybeSingle();
+
+  const grantFields = createGrantFields(linkRow?.access_ttl_minutes);
+
   const { error: upsertError } = await supabase.from("link_unlocks").upsert(
     {
       link_id: linkId,
       stripe_session_id: sessionId,
       visitor_id: session.metadata?.visitor_id || null,
       email: session.customer_details?.email ?? null,
+      ...grantFields,
     },
-    { onConflict: "stripe_session_id" },
+    { onConflict: "stripe_session_id", ignoreDuplicates: true },
   );
 
   if (upsertError) {
@@ -54,14 +67,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Could not record unlock" }, { status: 500 });
   }
 
-  const { data: link } = await supabase
-    .from("links")
-    .select("url")
-    .eq("id", linkId)
-    .maybeSingle();
+  const accessToken = await getAccessTokenForSession(supabase, sessionId);
+  if (!accessToken) {
+    return NextResponse.json({ error: "Could not issue access grant" }, { status: 500 });
+  }
 
-  const url = link ? normalizeUrl(link.url) : null;
-  if (!url) return NextResponse.json({ error: "Link not found" }, { status: 404 });
-
-  return NextResponse.json({ url });
+  return NextResponse.json({ redirectTo: buildHandoffPath(linkId, accessToken) });
 }
