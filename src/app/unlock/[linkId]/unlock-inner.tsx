@@ -46,9 +46,9 @@ export function UnlockPageInner({ params }: Props) {
     fetch(`/api/stripe/unlock-status?linkId=${linkId}`)
       .then((r) => r.json())
       .then((data) => {
-        const status = data as { unlocked?: boolean; url?: string };
-        if (status.unlocked && status.url) {
-          router.replace(status.url);
+        const status = data as { unlocked?: boolean; redirectTo?: string };
+        if (status.unlocked && status.redirectTo) {
+          router.replace(status.redirectTo);
         }
       })
       .catch(() => { /* stay on paywall */ })
@@ -61,9 +61,9 @@ export function UnlockPageInner({ params }: Props) {
     fetch(`/api/stripe/verify?session_id=${sessionId}&link_id=${linkId}`)
       .then((r) => r.json())
       .then((data) => {
-        const result = data as { url?: string; error?: string };
-        if (result.url) {
-          router.replace(result.url);
+        const result = data as { redirectTo?: string; error?: string };
+        if (result.redirectTo) {
+          router.replace(result.redirectTo);
         } else {
           setError(result.error ?? "Payment verified but could not redirect. Please try again.");
           setCheckingUnlock(false);
