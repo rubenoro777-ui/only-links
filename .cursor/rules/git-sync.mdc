@@ -1,0 +1,13 @@
+---
+description: Keep local git in sync with GitHub at all times
+alwaysApply: true
+---
+
+# Git sync with GitHub
+
+Local `main` and `origin/main` must always match.
+
+- Before starting work: `git fetch origin` and pull if behind.
+- After completing work: commit and push so GitHub has the same code as local.
+- Never leave the workspace diverged (ahead/behind) without telling the user.
+- If a merge is in progress locally, resolve it — do not ask the user to merge manually.

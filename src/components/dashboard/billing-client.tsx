@@ -72,7 +72,7 @@ export function BillingClient({
     <div className="space-y-6">
       {!hasProAccess && (
         <div className="flex justify-center">
-          <div className="flex rounded-lg border p-1 text-sm">
+          <div className="inline-flex rounded-lg border p-1 text-sm">
             <button
               type="button"
               onClick={() => setInterval("month")}
@@ -98,7 +98,7 @@ export function BillingClient({
               Yearly
               <span
                 className={[
-                  "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                  "rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
                   interval === "year"
                     ? "bg-green-500 text-white"
                     : "bg-green-500/15 text-green-600",
@@ -111,134 +111,193 @@ export function BillingClient({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 pt-2 sm:grid-cols-2 sm:gap-4">
-        <div
-          className={[
-            "relative overflow-visible rounded-xl border p-5 space-y-4",
-            !hasProAccess
-              ? "border-2 border-foreground/20 bg-background"
-              : "bg-muted/30",
-          ].join(" ")}
-        >
-          {!hasProAccess && (
-            <span className="absolute -top-2.5 left-4 rounded-full bg-foreground px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-background">
-              Current plan
-            </span>
-          )}
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Free</p>
-            <p className="mt-1 text-3xl font-bold">$0</p>
-            <p className="text-xs text-muted-foreground mt-0.5">forever</p>
-          </div>
-          <ul className="space-y-2.5">
-            {features.map((f) => (
-              <FeatureRow key={f.label} label={f.label} value={f.free} />
-            ))}
-          </ul>
-        </div>
-
-        <div
-          className={[
-            "relative overflow-visible rounded-xl border-2 p-5 space-y-4",
-            hasProAccess
-              ? "border-primary bg-background"
-              : "border-primary/40 bg-background",
-          ].join(" ")}
-        >
-          {hasProAccess ? (
-            <span className="absolute -top-2.5 left-4 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
-              {isOwnerAccess && !isProSubscriber ? "Owner access" : "Active"}
-            </span>
-          ) : (
-            <span className="absolute -top-2.5 left-4 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-              Recommended
-            </span>
-          )}
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Pro</p>
-            {hasProAccess ? (
-              <div className="mt-1 space-y-1">
-                <p className="text-2xl font-bold">
-                  {isProSubscriber ? "Subscribed" : "Unlocked"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isProSubscriber
-                    ? "Manage billing below"
-                    : "Full Pro features enabled for testing"}
-                </p>
-              </div>
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
+        <PlanCard
+          badge={
+            !hasProAccess ? (
+              <PlanBadge variant="current">Current plan</PlanBadge>
+            ) : null
+          }
+          highlighted={!hasProAccess}
+          muted={hasProAccess}
+          title="Free"
+          price={<p className="text-3xl font-bold tracking-tight">$0</p>}
+          subtitle="forever"
+          features={features.map((f) => ({ label: f.label, value: f.free }))}
+          footer={
+            !hasProAccess ? (
+              <Button variant="outline" className="w-full" disabled>
+                Your current plan
+              </Button>
             ) : (
-              <>
-                <div className="flex items-end gap-1 mt-1">
-                  <p className="text-3xl font-bold">${displayPrice}</p>
-                  <p className="text-sm text-muted-foreground mb-0.5">/mo</p>
-                </div>
-                {interval === "year" && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Billed ${yearly}/yr · saves $
-                    {((monthlyPrice * 12 - yearlyPrice) / 100).toFixed(0)}/yr
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-          <ul className="space-y-2.5">
-            {features.map((f) => (
-              <FeatureRow key={f.label} label={f.label} value={f.pro} />
-            ))}
-          </ul>
+              <div className="rounded-lg border border-dashed px-3 py-2.5 text-center text-xs text-muted-foreground">
+                Included with every account
+              </div>
+            )
+          }
+        />
 
-          {stripeConfigured ? (
+        <PlanCard
+          badge={
             hasProAccess ? (
-              isProSubscriber ? (
+              <PlanBadge variant="active">
+                {isOwnerAccess && !isProSubscriber ? "Owner access" : "Active"}
+              </PlanBadge>
+            ) : (
+              <PlanBadge variant="recommended">Recommended</PlanBadge>
+            )
+          }
+          highlighted={hasProAccess}
+          title="Pro"
+          price={
+            hasProAccess ? (
+              <p className="text-2xl font-bold tracking-tight">
+                {isProSubscriber ? "Subscribed" : "Unlocked"}
+              </p>
+            ) : (
+              <div className="flex items-end gap-1">
+                <p className="text-3xl font-bold tracking-tight">${displayPrice}</p>
+                <p className="pb-0.5 text-sm text-muted-foreground">/mo</p>
+              </div>
+            )
+          }
+          subtitle={
+            hasProAccess
+              ? isProSubscriber
+                ? "Manage billing below"
+                : "Full Pro features enabled for testing"
+              : interval === "year"
+                ? `Billed $${yearly}/yr · saves $${((monthlyPrice * 12 - yearlyPrice) / 100).toFixed(0)}/yr`
+                : `Billed $${monthly}/mo`
+          }
+          features={features.map((f) => ({ label: f.label, value: f.pro }))}
+          footer={
+            stripeConfigured ? (
+              hasProAccess ? (
+                isProSubscriber ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handlePortal}
+                    disabled={loading === "portal"}
+                  >
+                    {loading === "portal" ? (
+                      <>
+                        <Loader2 className="mr-2 size-4 animate-spin" />
+                        Opening…
+                      </>
+                    ) : (
+                      "Manage subscription"
+                    )}
+                  </Button>
+                ) : (
+                  <div className="rounded-lg border border-dashed px-3 py-2.5 text-center text-xs text-muted-foreground">
+                    Owner access — no Stripe subscription on this account
+                  </div>
+                )
+              ) : (
                 <Button
-                  variant="outline"
                   className="w-full"
-                  onClick={handlePortal}
-                  disabled={loading === "portal"}
+                  onClick={handleUpgrade}
+                  disabled={loading === "upgrade"}
                 >
-                  {loading === "portal" ? (
+                  {loading === "upgrade" ? (
                     <>
                       <Loader2 className="mr-2 size-4 animate-spin" />
-                      Opening…
+                      Redirecting…
                     </>
                   ) : (
-                    "Manage subscription"
+                    `Upgrade to Pro · $${interval === "month" ? `${monthly}/mo` : `${yearly}/yr`}`
                   )}
                 </Button>
-              ) : (
-                <div className="rounded-lg border border-dashed p-3 text-center text-xs text-muted-foreground">
-                  Owner access — no Stripe subscription on this account
-                </div>
               )
             ) : (
-              <Button
-                className="w-full"
-                onClick={handleUpgrade}
-                disabled={loading === "upgrade"}
-              >
-                {loading === "upgrade" ? (
-                  <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                    Redirecting…
-                  </>
-                ) : (
-                  `Upgrade to Pro · $${interval === "month" ? `${monthly}/mo` : `${yearly}/yr`}`
-                )}
-              </Button>
+              <div className="rounded-lg border border-dashed px-3 py-2.5 text-center text-xs text-muted-foreground">
+                Payments coming soon
+              </div>
             )
-          ) : (
-            <div className="rounded-lg border border-dashed p-3 text-center text-xs text-muted-foreground">
-              Payments coming soon
-            </div>
-          )}
-        </div>
+          }
+        />
       </div>
 
       {error && (
         <p className="text-center text-sm text-destructive">{error}</p>
       )}
     </div>
+  );
+}
+
+function PlanCard({
+  badge,
+  highlighted,
+  muted = false,
+  title,
+  price,
+  subtitle,
+  features,
+  footer,
+}: {
+  badge: React.ReactNode;
+  highlighted?: boolean;
+  muted?: boolean;
+  title: string;
+  price: React.ReactNode;
+  subtitle: string;
+  features: { label: string; value: boolean | string }[];
+  footer: React.ReactNode;
+}) {
+  return (
+    <article
+      className={[
+        "flex h-full flex-col rounded-xl border p-5 sm:p-6",
+        highlighted
+          ? "border-2 border-primary bg-background shadow-sm"
+          : muted
+            ? "border bg-muted/20"
+            : "border-2 border-foreground/15 bg-background",
+      ].join(" ")}
+    >
+      <div className="mb-4 min-h-[1.5rem]">{badge}</div>
+
+      <header className="mb-5 min-h-[5.5rem]">
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        <div className="mt-1">{price}</div>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{subtitle}</p>
+      </header>
+
+      <ul className="flex-1 space-y-2 border-t pt-4">
+        {features.map((f) => (
+          <FeatureRow key={f.label} label={f.label} value={f.value} />
+        ))}
+      </ul>
+
+      <div className="mt-6 border-t pt-4">{footer}</div>
+    </article>
+  );
+}
+
+function PlanBadge({
+  variant,
+  children,
+}: {
+  variant: "current" | "recommended" | "active";
+  children: React.ReactNode;
+}) {
+  const styles = {
+    current: "bg-foreground text-background",
+    recommended: "bg-primary/10 text-primary",
+    active: "bg-primary text-primary-foreground",
+  } as const;
+
+  return (
+    <span
+      className={[
+        "inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide",
+        styles[variant],
+      ].join(" ")}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -253,20 +312,20 @@ function FeatureRow({
   const detail = typeof value === "string" ? value : null;
 
   return (
-    <li className="flex items-start gap-2.5 text-sm">
-      {included ? (
-        <Check className="mt-0.5 size-3.5 shrink-0 text-green-500" />
-      ) : (
-        <X className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/40" />
-      )}
-      <div className="min-w-0 flex-1">
-        <span className={included ? "" : "text-muted-foreground/50"}>
+    <li className="grid grid-cols-[1rem_1fr] gap-x-2.5 gap-y-0.5 text-sm leading-snug">
+      <span className="mt-0.5 flex justify-center">
+        {included ? (
+          <Check className="size-3.5 shrink-0 text-green-500" />
+        ) : (
+          <X className="size-3.5 shrink-0 text-muted-foreground/40" />
+        )}
+      </span>
+      <div className="min-w-0">
+        <span className={included ? "text-foreground" : "text-muted-foreground/50"}>
           {label}
         </span>
         {detail && (
-          <span className="mt-0.5 block text-xs font-medium text-muted-foreground">
-            {detail}
-          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">{detail}</span>
         )}
       </div>
     </li>
